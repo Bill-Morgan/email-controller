@@ -5,11 +5,9 @@ import { HttpClient } from '@angular/common/http';
   providedIn: 'root'
 })
 export class EmailApiService {
-  private url = 'http://mail.wamusa.com/';
+  private url = 'http://mail.yourtravelservices.org/';
   private authPath = 'api/v1/auth/authenticate-user';
   private getDomainEventList = "api/v1/settings/domain/domain-events"
-  private sendPath = 'api/v1/mail/message-put'
-  psw = "z95Jvwr^Yk65EgDuivFx"
 
   public accessToken;
   
