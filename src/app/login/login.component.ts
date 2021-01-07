@@ -24,7 +24,9 @@ export class LoginComponent implements OnInit {
     this.emailSC.login(this.loginForm.get('username').value, this.loginForm.get('password').value)
       .subscribe((results) => {
       this.emailSC.accessToken = "Bearer " + results["accessToken"];
-      this.emailSC.getEventList();
+      // this.emailSC.getEventList();
+      // this.emailSC.geEventHooksByOwner();
+      this.emailSC.getAllUserGroups();
     });
   }
 }
