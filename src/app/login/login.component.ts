@@ -27,6 +27,9 @@ export class LoginComponent implements OnInit {
       // this.emailSC.getEventList();
       // this.emailSC.geEventHooksByOwner();
       this.emailSC.getAllUserGroups();
+      // this.emailSC.getUserGroupById('2')
+      // this.emailSC.createUserGroup("Supervisors");
     });
   }
+
 }
