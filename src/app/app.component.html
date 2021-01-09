@@ -1,1 +1,8 @@
-<app-login></app-login>
+<div class="container">
+    <div *ngIf="emailSC.accessToken === null">
+        <app-login></app-login>
+    </div>
+    <div *ngIf="emailSC.accessToken !== null">
+        <app-super-select></app-super-select>
+    </div>
+</div>

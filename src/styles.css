@@ -1,1 +1,86 @@
-/* You can add global styles to this file, and also import other style files */
+body {
+    /* background-image: linear-gradient(gray, white); */
+    background-color:cornsilk;
+}
+
+
+.blackbg {
+    background-color: black;
+}
+
+.greenbg {
+    background-color: green;
+}
+
+.white {
+    color: white;
+}
+
+.goldenbg {
+    background-color: gold;
+}
+.smspace {
+    line-height: 75%;
+}
+
+.center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.vcenter {
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+.centertext {
+    text-align: center;    
+}
+
+.right {
+    margin-left: auto;
+    margin-right: 0px;
+}
+
+.left {
+    margin-left: 0px;
+    margin-right: auto;
+}
+
+.top {
+    margin-top: 0px;
+    margin-bottom: auto;
+}
+
+.bottom {
+    margin-top: auto;
+    margin-bottom: 0px;
+}
+
+.italic {
+    font-style: italic;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.smlineheight {
+    line-height: 50%;
+}
+
+.large {
+    font-size: large;
+}
+
+.xlarge {
+    font-size: x-large;
+}
+
+.xxlarge {
+    font-size: xx-large;
+}
+
+.smborder {
+    border: 1px solid black;
+}

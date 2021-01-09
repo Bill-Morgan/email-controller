@@ -22,14 +22,12 @@ export class LoginComponent implements OnInit {
   onSubmit() {
     console.log("submit pressed");
     this.emailSC.login(this.loginForm.get('username').value, this.loginForm.get('password').value)
-      .subscribe((results) => {
-      this.emailSC.accessToken = "Bearer " + results["accessToken"];
       // this.emailSC.getEventList();
       // this.emailSC.geEventHooksByOwner();
-      this.emailSC.getAllUserGroups();
+      // this.emailSC.getAllUserGroups();
       // this.emailSC.getUserGroupById('2')
       // this.emailSC.createUserGroup("Supervisors");
-    });
+      // this.emailSC.listUsers();
   }
 
 }

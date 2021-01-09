@@ -1,0 +1,39 @@
+<br><br><br><br>
+<div class="row">
+    <div class="col-12">
+        <h1 class="centertext">Supervisor Selector</h1>
+    </div>
+</div>
+<br><br><br><br>
+<form [formGroup]="superForm" (ngSubmit)="onSubmit()">
+    <div class="row">
+        <div class="col-4 offset-1">
+            <h3 class="centertext">Selected Users</h3>
+            <select multiple class="selectBox form-control" (click)="onFocus('super'); nonSuperSelectedInput.value = []"
+                formControlName="superSelected" #superSelectedInput>
+                <ng-container *ngFor="let user of users">
+                    <option *ngIf="user.supervisor" >{{ user.username}}</option>
+                </ng-container> 
+            </select>
+        </div>
+        <div class="col-1 center vcenter">
+            <button class="btn btn-success" [disabled]="buttonDisabled" (click)="onBtnClick()">{{ buttonTxt }}</button>
+        </div>
+        <div class="col-4">
+            <h3 class="centertext">Available Users</h3>
+            <select multiple class="selectBox form-control" (click)="onFocus('notSuper'); superSelectedInput.value = []"
+                formControlName="nonSuperSelected" #nonSuperSelectedInput>
+                <ng-container *ngFor="let user of users">
+                    <option *ngIf="!user.supervisor">{{ user.username }}</option>
+                </ng-container>
+            </select>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 center">
+            <button type="submit" class="btn btn-success">Submit</button>
+            &nbsp; | &nbsp;
+            <button type="button" class="btn btn-warning">Cancel</button>
+        </div>
+    </div>
+</form>
