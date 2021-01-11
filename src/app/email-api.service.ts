@@ -18,12 +18,18 @@ export class EmailApiService {
   getUserGroupByIdPath = "api/v1/settings/domain/user-group/";
   createUserGroupPath = "api/v1/settings/domain/user-group-put"
   listUsersPath = "api/v1/settings/domain/list-users"
+  removeUserFromGroupPath = "api/v1/settings/domain/remove-from-user-groups/"
+  addUserToGroupPath = 'api/v1/settings/domain/add-to-user-groups/'
 
   supervisorGroupId = "-1";
   emailGroups: EmailGroupModule[] = [];
   userEvent = new EventEmitter();
+  supervisors: string[] = [];
 
   users: UserModule[] = [];
+
+
+  loggedIn = false;
 
   accessToken = null;
 
@@ -41,10 +47,171 @@ export class EmailApiService {
         console.log(results);
         if (results['isDomainAdmin']) {
           this.accessToken = "Bearer " + results["accessToken"];
-          this.listUsers();
+          this.getUserData().then((data) => {
+            this.loggedIn = true;
+          });
         }
       }
       )
+  }
+
+  getUserData(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      let fullUrl = this.url + this.listUsersPath;
+      let tempusers: UserModule[] = [];
+      this.getSupervisorGroupId().then((data) => {
+        this.supervisorGroupId = data;
+        console.log("groupId = " + this.supervisorGroupId);
+        this.getUserGroupById(this.supervisorGroupId).subscribe((results) => {
+          console.log("should show supervisors");
+          console.log(results);
+          if (results['userNames']) {
+            this.supervisors = results['userNames']
+          }
+        });
+        this.http.get(fullUrl, { headers: { "Authorization": this.accessToken } })
+          .subscribe((results) => {
+            for (let eachUser of results['userData']) {
+              let isSuper = (this.supervisors.indexOf(eachUser['username']) >= 0)
+              tempusers.push({ "username": eachUser['userName'], "supervisor": isSuper });
+            }
+            this.users = tempusers.sort((a, b) => {
+              if (a.username < b.username) {
+                return -1
+              } else {
+                return 1
+              }
+            })
+            resolve(true);
+          });
+      });
+      console.log(this.users);
+    })
+  }
+
+  getUserGroupById(id: string) {
+    let fullUrl = this.url + this.getUserGroupByIdPath + id;
+    return this.http.get(fullUrl, { headers: { "Authorization": this.accessToken } })
+  }
+
+  getSupervisorGroupId(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.getAllUserGroups()
+        .subscribe((results) => {
+          console.log(results);
+          for (let eachGroup of results['userGroupCollection']['customUserGroups']) {
+            console.log(eachGroup);
+            console.log(eachGroup['name'])
+            if (eachGroup['name'] == "Supervisors") {
+              // console.log("supervisor found");
+              this.supervisorGroupId = eachGroup['id']
+              resolve(<string>eachGroup['id']);
+              break;
+            }
+          }
+          if (this.supervisorGroupId == "-1") {
+            this.createUserGroup("Supervisors")
+              .subscribe((results) => {
+                this.supervisorGroupId = results['id'];
+                resolve(<string>results['id']);
+              });
+          }
+        })
+    });
+  }
+
+  createUserGroup(userGroup: string) {
+    let fullUrl = this.url + this.createUserGroupPath;
+    let postInputs = {
+      "userGroup":
+      {
+        "name": userGroup,
+      }
+    }
+    // this.getUserGroupById(userGroup);
+    return this.http.post(fullUrl, postInputs, { headers: { "Authorization": this.accessToken } })
+  }
+
+  onSaveSupervisors() {
+    let removeUsers = [];
+    let addUsers = [];
+    let index = 0;
+    for (let user of this.users) {
+      if (user.supervisor) {
+        if (this.supervisors.indexOf(user.username) < 0) {
+          addUsers.push(user.username);
+        }
+      } else {
+        if (this.supervisors.indexOf(user.username) >= 0) {
+          removeUsers.push(user.username);
+        }
+      }
+    }
+    if (removeUsers.length > 0) {
+      this.removeUsersFromGroup(addUsers).then(result => {
+        if (!result) {throw ("error removing users from supervisors")}
+        this.addUsersToGroup(addUsers).then(result => {
+          if (!result) {throw ("error adding users to supervisors")}
+          this.addUsersToGroup(addUsers).then(result => {
+            if (!result) {throw ("error adding users to supervisors")}
+          })
+        })
+      })
+    } else {
+      if (addUsers.length > 0) {
+        this.addUsersToGroup(addUsers).then(result => {
+          if (!result) {throw ("error adding users to supervisors")}
+        })
+      }
+    }
+    console.log("remove users: ");
+    console.log(removeUsers);
+    console.log("add users: ");
+    console.log(addUsers);
+  }
+
+  addUsersToGroup(usernames: string[]): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      let fullUrl = this.url + this.addUserToGroupPath
+      let postInputs = {
+        "iDs":
+          [
+            this.supervisorGroupId
+          ]
+      }
+      for (let username of usernames) {
+        let success: boolean;
+        this.http.post(fullUrl + username, postInputs, { headers: { "Authorization": this.accessToken } }).subscribe((data) => {
+          success = data['success'];
+        });
+        if (!success) {
+          throw ('error adding user ' + username + ' from supervisors.');
+        }
+      }
+      resolve(true);
+    })
+  }
+
+  removeUsersFromGroup(usernames: string[]): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      let fullUrl = this.url + this.removeUserFromGroupPath
+      let postInputs = {
+        "iDs":
+          [
+            parseInt(this.supervisorGroupId)
+          ]
+      }
+      for (let username of usernames) {
+          let success;
+        this.http.post(fullUrl + username, postInputs, { headers: { "Authorization": this.accessToken } }).subscribe((data) => {
+          success = data['success'];
+        });
+        if (!success) {
+          throw ('error removing user ' + username + ' from supervisors.');
+        }
+      }
+      resolve(true);
+    })
   }
 
   getEventList() {
@@ -78,79 +245,5 @@ export class EmailApiService {
     return this.http.get(fullUrl, { headers: { "Authorization": this.accessToken } })
   }
 
-  listUsers() {
-    let fullUrl = this.url + this.listUsersPath;
-    let tempusers: UserModule[] = [];
-    let supervisors: string[] = []
-    this.getSupervisorGroupId().then((data) => {
-      this.supervisorGroupId = data;
-      console.log("groupId = " + this.supervisorGroupId);
-      this.getUserGroupById(this.supervisorGroupId).subscribe((results) => {
-        supervisors = results['userNames']
-      });
-      this.http.get(fullUrl, { headers: { "Authorization": this.accessToken } })
-        .subscribe((results) => {
-          for (let eachUser of results['userData']) {
-            let isSuper = (supervisors.indexOf(eachUser['username']) >= 0)
-            tempusers.push({ "username": eachUser['userName'], "supervisor": isSuper });
-          }
-          this.users = tempusers.sort((a, b) => {
-            if (a.username < b.username) {
-              return -1
-            } else {
-              return 1
-            }
-          })
-        });
-    });
-    console.log(this.users);
-  }
-
-  getUserGroupById(id: string) {
-    let fullUrl = this.url + this.getUserGroupByIdPath + id;
-    return this.http.get(fullUrl, { headers: { "Authorization": this.accessToken } })
-  }
-
-  getSupervisorGroupId(): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.getAllUserGroups()
-        .subscribe((results) => {
-          console.log(results);
-          for (let eachGroup of results['userGroupCollection']['customUserGroups']) {
-            console.log(eachGroup);
-            console.log(eachGroup['name'])
-            if (eachGroup['name'] == "Supervisors") {
-              console.log("supervisor found");
-              resolve(<string>eachGroup['id']);
-              break;
-            }
-          }
-          if (this.supervisorGroupId == "-1") {
-            // this.createUserGroup("Supervisors")
-            //   .subscribe((results) => {
-            //     this.supervisorGroupId = results['id'];
-            //     resolve(<string>results['id']);
-            //   });
-          }
-        })
-      reject(<string>"-1");
-    });
-  }
-
-  createUserGroup(userGroup: string) {
-    let fullUrl = this.url + this.createUserGroupPath;
-    let postInputs = {
-      "userGroup":
-      {
-        "name": userGroup,
-      }
-    }
-    // this.getUserGroupById(userGroup);
-    return this.http.post(fullUrl, postInputs, { headers: { "Authorization": this.accessToken } })
-  }
-
-  onSaveSupervisors(allUsers: UserModule) {
-
-  }
 
 }

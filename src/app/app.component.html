@@ -1,8 +1,8 @@
 <div class="container">
-    <div *ngIf="emailSC.accessToken === null">
+    <div *ngIf="!emailSC.loggedIn">
         <app-login></app-login>
     </div>
-    <div *ngIf="emailSC.accessToken !== null">
+    <div *ngIf="emailSC.loggedIn">
         <app-super-select></app-super-select>
     </div>
 </div>

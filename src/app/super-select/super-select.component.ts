@@ -10,8 +10,6 @@ import { UserModule } from '../user/user.module';
 })
 export class SuperSelectComponent implements OnInit {
   superForm: FormGroup;
-  // superSelected: string[] = [];
-  // nonSuperSelected: string[] = [];
   users: UserModule[] = [];
   buttonTxt = "----";
   buttonDisabled = false;
@@ -58,15 +56,8 @@ export class SuperSelectComponent implements OnInit {
     }
   }
 
-  updateUsers() {
-    for (let user of this.users) {
-      // user.supervisor = this.supervisors.indexOf(user.username) >= 0;
-    }
-
-  }
-
   onSubmit() {
-
+    this.emailSC.onSaveSupervisors()
   }
 
 }

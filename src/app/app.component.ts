@@ -8,7 +8,6 @@ import { EmailApiService } from './email-api.service';
 })
 export class AppComponent implements OnInit{
   title = 'email-controller';
-  isLoggedIn = false;
 
   constructor(public emailSC: EmailApiService){}
 
