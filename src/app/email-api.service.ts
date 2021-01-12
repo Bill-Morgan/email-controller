@@ -20,6 +20,7 @@ export class EmailApiService {
   listUsersPath = "api/v1/settings/domain/list-users"
   removeUserFromGroupPath = "api/v1/settings/domain/remove-from-user-groups/"
   addUserToGroupPath = 'api/v1/settings/domain/add-to-user-groups/'
+  removeUserGroupsPath = 'api/v1/settings/domain/remove-user-groups'
 
   supervisorGroupId = "-1";
   emailGroups: EmailGroupModule[] = [];
@@ -69,7 +70,7 @@ export class EmailApiService {
             this.supervisors = results['userNames']
           }
         });
-        this.http.get(fullUrl, { headers: { "Authorization": this.accessToken } })
+        this.http.get(fullUrl)
           .subscribe((results) => {
             for (let eachUser of results['userData']) {
               let isSuper = (this.supervisors.indexOf(eachUser['username']) >= 0)
@@ -91,7 +92,7 @@ export class EmailApiService {
 
   getUserGroupById(id: string) {
     let fullUrl = this.url + this.getUserGroupByIdPath + id;
-    return this.http.get(fullUrl, { headers: { "Authorization": this.accessToken } })
+    return this.http.get(fullUrl)
   }
 
   getSupervisorGroupId(): Promise<string> {
@@ -99,17 +100,20 @@ export class EmailApiService {
       this.getAllUserGroups()
         .subscribe((results) => {
           console.log(results);
-          for (let eachGroup of results['userGroupCollection']['customUserGroups']) {
-            console.log(eachGroup);
-            console.log(eachGroup['name'])
-            if (eachGroup['name'] == "Supervisors") {
-              // console.log("supervisor found");
-              this.supervisorGroupId = eachGroup['id']
-              resolve(<string>eachGroup['id']);
-              break;
+          if (results['userGroupCollection']['customUserGroups']) {
+            for (let eachGroup of results['userGroupCollection']['customUserGroups']) {
+              console.log(eachGroup);
+              console.log(eachGroup['name'])
+              if (eachGroup['name'] == "Supervisors") {
+                // console.log("supervisor found");
+                this.supervisorGroupId = eachGroup['id']
+                resolve(<string>eachGroup['id']);
+                break;
+              }
             }
           }
           if (this.supervisorGroupId == "-1") {
+            console.log('creating usergroup')
             this.createUserGroup("Supervisors")
               .subscribe((results) => {
                 this.supervisorGroupId = results['id'];
@@ -129,7 +133,7 @@ export class EmailApiService {
       }
     }
     // this.getUserGroupById(userGroup);
-    return this.http.post(fullUrl, postInputs, { headers: { "Authorization": this.accessToken } })
+    return this.http.post(fullUrl, postInputs)
   }
 
   onSaveSupervisors() {
@@ -149,18 +153,18 @@ export class EmailApiService {
     }
     if (removeUsers.length > 0) {
       this.removeUsersFromGroup(addUsers).then(result => {
-        if (!result) {throw ("error removing users from supervisors")}
+        if (!result) { throw ("error removing users from supervisors") }
         this.addUsersToGroup(addUsers).then(result => {
-          if (!result) {throw ("error adding users to supervisors")}
+          if (!result) { throw ("error adding users to supervisors") }
           this.addUsersToGroup(addUsers).then(result => {
-            if (!result) {throw ("error adding users to supervisors")}
+            if (!result) { throw ("error adding users to supervisors") }
           })
         })
       })
     } else {
       if (addUsers.length > 0) {
         this.addUsersToGroup(addUsers).then(result => {
-          if (!result) {throw ("error adding users to supervisors")}
+          if (!result) { throw ("error adding users to supervisors") }
         })
       }
     }
@@ -181,12 +185,13 @@ export class EmailApiService {
       }
       for (let username of usernames) {
         let success: boolean;
-        this.http.post(fullUrl + username, postInputs, { headers: { "Authorization": this.accessToken } }).subscribe((data) => {
+        this.http.post(fullUrl + username, postInputs).subscribe((data) => {
+          console.log(data);
           success = data['success'];
+          if (!success) {
+            throw ('error adding user ' + username + ' from supervisors.');
+          }
         });
-        if (!success) {
-          throw ('error adding user ' + username + ' from supervisors.');
-        }
       }
       resolve(true);
     })
@@ -202,8 +207,8 @@ export class EmailApiService {
           ]
       }
       for (let username of usernames) {
-          let success;
-        this.http.post(fullUrl + username, postInputs, { headers: { "Authorization": this.accessToken } }).subscribe((data) => {
+        let success;
+        this.http.post(fullUrl + username, postInputs).subscribe((data) => {
           success = data['success'];
         });
         if (!success) {
@@ -216,7 +221,7 @@ export class EmailApiService {
 
   getEventList() {
     let fullUrl = this.url + this.getDomainEventList
-    this.http.get(fullUrl, { headers: { "Authorization": this.accessToken } })
+    this.http.get(fullUrl)
       .subscribe((results) => {
         console.log(results);
       })
@@ -224,7 +229,7 @@ export class EmailApiService {
 
   getEventHookByGuid() {
     let fullUrl = this.url + this.getDomainEventHookByGuidPath
-    this.http.get(fullUrl + '3001', { headers: { "Authorization": this.accessToken } })
+    this.http.get(fullUrl + '3001')
       .subscribe((results) => {
         console.log(results);
       })
@@ -233,7 +238,7 @@ export class EmailApiService {
   getEventHooksByOwner() {
     let fullUrl = this.url + this.getDomainEventHooksByOwnerPath
     let postInputs = { "name": "", "sortDescending": true, "count": 100, "startIndex": 0 }
-    this.http.post(fullUrl, postInputs, { headers: { "Authorization": this.accessToken } })
+    this.http.post(fullUrl, postInputs)
       .subscribe((results) => {
         console.log("event hooks by owner")
         console.log(results);
@@ -242,8 +247,19 @@ export class EmailApiService {
 
   getAllUserGroups() {
     let fullUrl = this.url + this.getAllUserGroupsPath;
-    return this.http.get(fullUrl, { headers: { "Authorization": this.accessToken } })
+    return this.http.get(fullUrl)
   }
 
+  deleteAllGroups() {
+    this.getAllUserGroups().subscribe((results) => {
+      let groups: { 'name': string, 'id': string }[] = results['userGroupCollection']['customUserGroups']
+      let allGroupIds = groups.map((eachUG) => { return eachUG['id'] });
+      let postInputs = { "iDs": allGroupIds }
+      let fullUrl = this.url + this.removeUserGroupsPath
+      this.http.post(fullUrl, postInputs).subscribe((results) => {
+        console.log(results);
+      })
+    })
+  }
 
 }
