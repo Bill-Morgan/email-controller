@@ -21,6 +21,7 @@ export class EmailApiService {
   removeUserFromGroupPath = "api/v1/settings/domain/remove-from-user-groups/"
   addUserToGroupPath = 'api/v1/settings/domain/add-to-user-groups/'
   removeUserGroupsPath = 'api/v1/settings/domain/remove-user-groups'
+  setUserGroupCollectionPath = 'api/v1/settings/domain/all-user-groups/{username}'
 
   supervisorGroupId = "-1";
   emailGroups: EmailGroupModule[] = [];
@@ -139,7 +140,6 @@ export class EmailApiService {
   onSaveSupervisors() {
     let removeUsers = [];
     let addUsers = [];
-    let index = 0;
     for (let user of this.users) {
       if (user.supervisor) {
         if (this.supervisors.indexOf(user.username) < 0) {
@@ -178,10 +178,11 @@ export class EmailApiService {
     return new Promise((resolve, reject) => {
       let fullUrl = this.url + this.addUserToGroupPath
       let postInputs = {
-        "iDs":
-          [
-            this.supervisorGroupId
-          ]
+        "iDs": [this.supervisorGroupId]
+          // [
+          //   this.supervisorGroupId
+          //   // 19
+          // ]
       }
       for (let username of usernames) {
         let success: boolean;
@@ -194,6 +195,25 @@ export class EmailApiService {
         });
       }
       resolve(true);
+    })
+  }
+
+  setUserGroupCollection(usernames: string[]): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      let fullUrl = this.url + this.setUserGroupCollectionPath
+      let postInputs = {
+        "id": this.supervisorGroupId,
+        "usernames" : usernames
+      }
+      let success;
+      // this.http.post(fullUrl + username, postInputs).subscribe((data) => {
+      //   success = data['success'];
+      // });
+      // if (!success) {
+      //   throw ('error removing user ' + username + ' from supervisors.');
+      // }
+    
+
     })
   }
 
